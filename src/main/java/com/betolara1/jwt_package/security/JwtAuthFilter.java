@@ -17,17 +17,17 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    // O CONTRUTOR UserDetailsService É DO SRPING BOOT
-    // ELE VAI PROCURAR A CLASSE QUE IMPLEMENTA UserDetailsService E INJETAR ELA
-    // AQUI, ASSIM PODEMOS USAR O MÉTODO
-    // loadUserByUsername PARA CARREGAR O USUÁRIO PELO NOME DE USUÁRIO EXTRAÍDO DO
-    // TOKEN
+    // O CONSTRUTOR RECEBE UserDetailsService E JwtUtil VIA INJEÇÃO DE DEPENDÊNCIA
+    // DO SPRING
+    // O SPRING VAI PROCURAR OS BEANS QUE IMPLEMENTAM ESSAS INTERFACES E INJETAR
+    // AQUI
     private final UserDetailsService userDetailsService;
-    public JwtAuthFilter(UserDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
-    }
+    private final JwtUtil jwtUtil;
 
-    private final JwtUtil JwtUtil = new JwtUtil();
+    public JwtAuthFilter(UserDetailsService userDetailsService, JwtUtil jwtUtil) {
+        this.userDetailsService = userDetailsService;
+        this.jwtUtil = jwtUtil;
+    }
 
     // METODO CRIA OBRIGATORIO POR ESTENDER DE OncePerRequestFilter
     @Override
@@ -61,11 +61,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         // SE CHEGOU AQUI, SIGNIFICA QUE O USUÁRIO TEM UM TOKEN, ENTÃO VAMOS EXTRAIR O
         // USUÁRIO DO TOKEN E VALIDAR O TOKEN
         String token = authHeader.substring(7);
-        String username = JwtUtil.extractUsername(token);
+        String username = jwtUtil.extractUsername(token);
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            if (JwtUtil.validateToken(token)) {
+            if (jwtUtil.validateToken(token)) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authToken);

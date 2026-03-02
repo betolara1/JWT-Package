@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.betolara1</groupId>
 	<artifactId>jwt-package</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 	<packaging>jar</packaging>
 	<name>jwt-package</name>
 	<description>jwt que vai virar uma biblioteca pro microserviço</description>
