@@ -17,15 +17,10 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    // O CONSTRUTOR RECEBE UserDetailsService E JwtUtil VIA INJEÇÃO DE DEPENDÊNCIA
-    // DO SPRING
-    // O SPRING VAI PROCURAR OS BEANS QUE IMPLEMENTAM ESSAS INTERFACES E INJETAR
-    // AQUI
-    private final UserDetailsService userDetailsService;
+    // O CONSTRUTOR RECEBE APENAS JwtUtil VIA INJEÇÃO DE DEPENDÊNCIA
     private final JwtUtil jwtUtil;
 
-    public JwtAuthFilter(UserDetailsService userDetailsService, JwtUtil jwtUtil) {
-        this.userDetailsService = userDetailsService;
+    public JwtAuthFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
     }
 
@@ -64,10 +59,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String username = jwtUtil.extractUsername(token);
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             if (jwtUtil.validateToken(token)) {
+                // Cria autenticação baseada apenas no Token (Stateless) sem buscar no banco
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
+                        username, null, java.util.Collections.emptyList());
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
