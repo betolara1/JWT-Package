@@ -18,8 +18,9 @@ public class JwtUtil {
     @Value("${secret.key}")
     private String key;
 
-    // VARIAVEL PARA EXPIRAÇÃO DO TOKEN
-    private static final long EXPIRATION_TIME = 86400000; // 86400000 MILISEGUNDOS = 24 HORAS
+    // TEMPO DE EXPIRAÇÃO DO TOKEN (Lido do properties ou 24h por padrão)
+    @Value("${jwt.expiration-time:86400000}")
+    private long expirationTime;
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(key.getBytes());
@@ -30,7 +31,7 @@ public class JwtUtil {
         return Jwts.builder()
                     .setSubject(username)
                     .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                    .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                    .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
                     .compact();
     }
 

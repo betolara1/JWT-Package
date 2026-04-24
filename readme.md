@@ -1,6 +1,6 @@
 # 🔐 JWT Package - Microservices Security Library
 
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.2-brightgreen)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.3-brightgreen)](https://spring.io/projects/spring-boot)
 [![Java](https://img.shields.io/badge/Java-21-orange)](https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -12,16 +12,14 @@ O `jwt-package` é uma biblioteca modular desenvolvida em Java 21 e Spring Boot 
 
 Em arquiteturas de microserviços, a autenticação e autorização descentralizadas podem levar a redundância de código e inconsistências de segurança. 
 
-Este projeto resolve esse problema ao fornecer um pacote reutilizável que:
-1.  **Padroniza** a validação de tokens JWT entre diferentes serviços.
-2.  **Reduz o Boilerplate**: Automatiza a configuração do filtro de segurança e utilitários de token.
-3.  **Facilita a Integração**: Pronto para ser injetado como uma dependência em qualquer microserviço Spring Boot.
+Este projeto fornece um pacote reutilizável que:
+1.  **Padroniza** a validação de tokens JWT.
+2.  **Reduz o Boilerplate**: Automatiza a configuração do filtro de segurança e utilitários.
+3.  **Flexibilidade Total**: Permite configurar rotas públicas dinamicamente por serviço.
 
 ---
 
-## 🏗️ Arquitetura e Fluxo de Autenticação
-
-O diagrama abaixo ilustra como a biblioteca intercepta as requisições para validar a identidade do usuário antes de chegar aos recursos protegidos.
+## 🏗️ Arquitetura e Fluxo
 
 ```mermaid
 sequenceDiagram
@@ -32,43 +30,52 @@ sequenceDiagram
     participant API as Microservice Controller
 
     C->>F: Request with Authorization: Bearer <token>
-    F->>U: extractUsername(token)
-    U-->>F: username
+    Note over F: Verifica se o path está na lista de 'excluded-paths'
     F->>U: validateToken(token)
-    U-->>F: true/false
+    U-->>F: true (valida assinatura e expiração)
     
     ALT Token é Válido
         F->>S: setAuthentication(user)
         F->>API: Proceed to resource
         API-->>C: Response 200 OK
-    ELSE Token Inválido/Ausente
+    ELSE Token Inválido/Expirado
         F-->>C: Response 401 Unauthorized
     END
 ```
 
 ---
 
-## 🚀 Tecnologias Utilizadas
-
-- **Java 21**: Aproveitando as últimas melhorias de performance e sintaxe.
-- **Spring Boot 4.0.2**: Base sólida para aplicações modernas.
-- **Spring Security**: Gerenciamento de filtros e contexto de autenticação.
-- **JJWT (Java JWT)**: Biblioteca robusta para criação e parsing de tokens.
-
----
-
 ## ⚙️ Configuração
 
-Para utilizar esta biblioteca no seu projeto, adicione as seguintes propriedades ao seu `application.properties` ou `application.yml`:
+Para utilizar esta biblioteca, adicione as seguintes propriedades ao seu `application.properties` ou `application.yml`:
 
+### Parâmetros de Configuração
+
+| Propriedade | Descrição | Valor Padrão |
+| :--- | :--- | :--- |
+| `secret.key` | Chave secreta para assinatura (mín. 32 chars) | (Obrigatório) |
+| `jwt.excluded-paths` | Lista de URLs públicas (AntPathMatcher) | (Vazio) |
+| `jwt.expiration-time` | Tempo de vida do token em **milisegundos** | 86400000 (24h) |
+
+#### Exemplo no `application.properties`:
 ```properties
-# Chave secreta para assinatura dos tokens (mantenha em segurança!)
-secret.key=sua_chave_secreta_super_segura_aqui_projeto_jwt_package
+secret.key=minha_chave_secreta_super_longa_e_segura
+jwt.excluded-paths=/public/**, /auth/login
+jwt.expiration-time=43200000  # Define para 12 horas
 ```
 
-### Dependências (pom.xml)
+#### Tabela de Referência (Milisegundos):
+- **1 hora**: `3600000`
+- **12 horas**: `43200000`
+- **24 horas**: `86400000`
+- **7 dias**: `604800000`
 
-Certifique-se de que as dependências do JJWT estão presentes:
+- Obs: Se não for informado o valor padrão será de 24 horas.
+
+
+### Dependências Recomendadas (pom.xml)
+
+A biblioteca utiliza o JJWT. Certifique-se de ter as implementações de runtime no seu projeto se elas não forem puxadas automaticamente:
 
 ```xml
 <dependency>
@@ -86,34 +93,37 @@ Certifique-se de que as dependências do JJWT estão presentes:
 
 ---
 
-## 🛠️ Como Usar
+## 🛠️ Funcionalidades
 
-### 1. JwtUtil
-Utilize esta classe para gerenciar o ciclo de vida do token.
+### 1. Gestão de Tokens (`JwtUtil`)
+O token agora possui **expiração automática de 24 horas**.
 
 ```java
 @Autowired
 private JwtUtil jwtUtil;
 
-// Gerar um token
+// Gerar um token com expiração
 String token = jwtUtil.generateToken("usuario_exemplo");
 
-// Validar um token
+// Validar assinatura e tempo de expiração
 boolean isValid = jwtUtil.validateToken(token);
-
-// Extrair username
-String username = jwtUtil.extractUsername(token);
 ```
 
-### 2. Filtro de Segurança
-O `JwtAuthFilter` já está configurado para interceptar requisições. Ele ignora automaticamente rotas de documentação como Swagger e Actuator, facilitando o desenvolvimento.
+### 2. Filtro Inteligente (`JwtAuthFilter`)
+- **Auto-ignora OPTIONS**: Requisições de Pre-flight (CORS) são liberadas automaticamente.
+- **Configuração Dinâmica**: Usa `AntPathMatcher` para validar os caminhos definidos em `jwt.excluded-paths`.
+- **Stateless**: Autentica o usuário no contexto do Spring Security sem necessidade de consulta ao banco de dados em cada request.
 
 ---
 
-## 🧪 Testes
+## 🧪 Testes Automatizados
 
-Para garantir a confiabilidade, execute o conjunto de testes automatizados:
+A biblioteca conta com uma suíte de testes unitários cobrindo:
+- Geração e validação de tokens.
+- Extração de Claims.
+- Lógica de exclusão de caminhos do filtro.
 
+Para rodar os testes:
 ```bash
 mvn test
 ```
