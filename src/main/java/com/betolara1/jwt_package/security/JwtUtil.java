@@ -38,8 +38,12 @@ public class JwtUtil {
 
     // METODO PARA EXTRAIR O USUARIO
     public String extractUsername(String token){
-        return Jwts.parserBuilder().setSigningKey(getSigningKey()).build()
-                    .parseClaimsJws(token).getBody().getSubject();
+        try{
+            return Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token).getBody().getSubject();
+        }
+        catch(JwtException | IllegalArgumentException e){
+            return null;
+        }
     }
 
 
