@@ -19,7 +19,7 @@ public class JwtUtil {
     private String key;
 
     // VARIAVEL PARA EXPIRAÇÃO DO TOKEN
-    private static final long EXPIRATION_TIME = 86400000; // 86400000 MINUTOS = 24 HORAS
+    private static final long EXPIRATION_TIME = 86400000; // 86400000 MILISEGUNDOS = 24 HORAS
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(key.getBytes());
