@@ -2,10 +2,9 @@ package com.betolara1.jwt_package.security;
 
 import java.io.IOException;
 
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -26,7 +25,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     // METODO CRIA OBRIGATORIO POR ESTENDER DE OncePerRequestFilter
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
         // IGNORAR AS REQUISIÇÕES DE DOCUMENTAÇÃO E ATUATOR PARA NÃO PRECISAR DE

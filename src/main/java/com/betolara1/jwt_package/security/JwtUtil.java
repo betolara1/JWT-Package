@@ -1,6 +1,7 @@
 package com.betolara1.jwt_package.security;
 
 import java.security.Key;
+import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,9 @@ public class JwtUtil {
     @Value("${secret.key}")
     private String key;
 
+    // VARIAVEL PARA EXPIRAÇÃO DO TOKEN
+    private static final long EXPIRATION_TIME = 86400000; // 86400000 MINUTOS = 24 HORAS
+
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(key.getBytes());
     }
@@ -26,6 +30,7 @@ public class JwtUtil {
         return Jwts.builder()
                     .setSubject(username)
                     .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                    .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                     .compact();
     }
 
