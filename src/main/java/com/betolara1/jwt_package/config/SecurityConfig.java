@@ -1,5 +1,6 @@
 package com.betolara1.jwt_package.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -16,6 +17,7 @@ public class SecurityConfig {
     // O BCryptPasswordEncoder é uma implementação do PasswordEncoder que usa o algoritmo BCrypt para codificar as senhas, o que é recomendado para segurança
     // O método passwordEncoder é obrigatório para configurar o Spring Security, pois ele precisa de um PasswordEncoder para codificar as senhas dos usuários
     @Bean
+    @ConditionalOnMissingBean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
