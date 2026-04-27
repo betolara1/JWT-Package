@@ -17,12 +17,17 @@ import io.jsonwebtoken.security.Keys;
 
 public class JwtUtil {
     private final JwtProperties properties;
+    private final Key signingKey; // Declarada como final pra cachear
+
     public JwtUtil(JwtProperties properties){
         this.properties = properties;
+
+        // O processamento pesado acontece aqui apenas UMA vez, quando o Spring sobe
+        this.signingKey = Keys.hmacShaKeyFor(properties.getSecretKey().getBytes());
     }
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(properties.getSecretKey().getBytes());
+        return this.signingKey; // Aqui ela só retorna o que já está pronto
     }
 
     
