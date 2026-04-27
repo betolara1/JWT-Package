@@ -14,8 +14,9 @@ Em arquiteturas de microserviços, a autenticação e autorização descentraliz
 
 Este projeto fornece um pacote reutilizável que:
 1.  **Padroniza** a validação de tokens JWT.
-2.  **Reduz o Boilerplate**: Automatiza a configuração do filtro de segurança e utilitários.
-3.  **Flexibilidade Total**: Permite configurar rotas públicas dinamicamente por serviço.
+2.  **Reduz o Boilerplate**: Automatiza a configuração do filtro de segurança e utilitários (Auto-configuration).
+3.  **Flexibilidade Total**: Permite configurar rotas públicas dinamicamente e ativar/desativar o filtro por propriedade.
+4.  **Claims Customizados**: Suporte nativo para adicionar metadados (roles, ids, etc) ao token.
 
 ---
 
@@ -56,6 +57,7 @@ Para utilizar esta biblioteca, adicione as seguintes propriedades ao seu `applic
 | `secret.key` | Chave secreta para assinatura (mín. 32 chars) | (Obrigatório) |
 | `jwt.excluded-paths` | Lista de URLs públicas (AntPathMatcher) | (Vazio) |
 | `jwt.expiration-time` | Tempo de vida do token em **milisegundos** | 86400000 (24h) |
+| `jwt.filter.enabled` | Ativa/Desativa o filtro de segurança | `true` |
 
 #### Exemplo no `application.properties`:
 ```properties
@@ -105,13 +107,21 @@ private JwtUtil jwtUtil;
 // Gerar um token com expiração
 String token = jwtUtil.generateToken("usuario_exemplo");
 
+// Gerar um token com Claims Customizados (Roles, ID, etc)
+Map<String, Object> claims = new HashMap<>();
+claims.put("role", "ADMIN");
+claims.put("tenantId", "123");
+String tokenComClaims = jwtUtil.generateToken("usuario_exemplo", claims);
+
 // Validar assinatura e tempo de expiração
 boolean isValid = jwtUtil.validateToken(token);
 ```
 
 ### 2. Filtro Inteligente (`JwtAuthFilter`)
+- **Plug & Play**: Detectado automaticamente pelo Spring Boot (não requer `@ComponentScan`).
 - **Auto-ignora OPTIONS**: Requisições de Pre-flight (CORS) são liberadas automaticamente.
 - **Configuração Dinâmica**: Usa `AntPathMatcher` para validar os caminhos definidos em `jwt.excluded-paths`.
+- **Ativável por Propriedade**: Pode ser desativado via `jwt.filter.enabled=false`.
 - **Stateless**: Autentica o usuário no contexto do Spring Security sem necessidade de consulta ao banco de dados em cada request.
 
 ---

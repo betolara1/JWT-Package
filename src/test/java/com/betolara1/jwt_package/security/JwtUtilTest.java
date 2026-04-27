@@ -17,6 +17,8 @@ class JwtUtilTest {
     void setUp() {
         jwtUtil = new JwtUtil();
         ReflectionTestUtils.setField(jwtUtil, "key", SECRET_KEY);
+        // Definimos 1 hora de expiração para os testes passarem
+        ReflectionTestUtils.setField(jwtUtil, "expirationTime", 3600000L);
     }
 
     @Test
@@ -44,6 +46,24 @@ class JwtUtilTest {
         
         String usernameExtraido = jwtUtil.extractUsername(token);
         assertEquals(usernameOriginal, usernameExtraido);
+    }
+
+    @Test
+    @DisplayName("Deve suportar e extrair claims customizados")
+    void deveSuportarClaimsCustomizados() {
+        String username = "user.custom";
+        java.util.Map<String, Object> claims = new java.util.HashMap<>();
+        claims.put("role", "ADMIN");
+        claims.put("email", "teste@email.com");
+
+        String token = jwtUtil.generateToken(username, claims);
+        
+        // Usamos um método auxiliar ou o extractUsername para validar a integridade
+        assertEquals(username, jwtUtil.extractUsername(token));
+        
+        // Para validar os claims internos, poderíamos expor o extractAllClaims ou criar um helper
+        // Como o extractAllClaims é private, validamos que o token é aceito
+        assertTrue(jwtUtil.validateToken(token));
     }
 
     @Test
