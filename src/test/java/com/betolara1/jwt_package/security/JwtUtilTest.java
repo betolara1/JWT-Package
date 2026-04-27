@@ -5,20 +5,24 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.betolara1.jwt_package.config.JwtProperties;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class JwtUtilTest {
 
     private JwtUtil jwtUtil;
+    private JwtProperties properties;
     // Chave de 256 bits (32 caracteres) para satisfazer o HS256
     private final String SECRET_KEY = "minha_chave_secreta_muito_longa_com_mais_de_32_caracteres_para_seguranca";
 
     @BeforeEach
     void setUp() {
-        jwtUtil = new JwtUtil();
-        ReflectionTestUtils.setField(jwtUtil, "key", SECRET_KEY);
-        // Definimos 1 hora de expiração para os testes passarem
-        ReflectionTestUtils.setField(jwtUtil, "expirationTime", 3600000L);
+        properties = new JwtProperties();// Inicializa o objeto
+        properties.setSecretKey(SECRET_KEY); // Configura os valores nele
+        properties.setExpirationTime(3600000L);
+
+        jwtUtil = new JwtUtil(properties);
     }
 
     @Test

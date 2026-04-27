@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 
+import com.betolara1.jwt_package.config.JwtProperties;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -14,17 +16,13 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
 public class JwtUtil {
-
-    // CHAVE SECRETA PARA ASSINAR O TOKEN
-    @Value("${secret.key}")
-    private String key;
-
-    // TEMPO DE EXPIRAÇÃO DO TOKEN (Lido do properties ou 24h por padrão)
-    @Value("${jwt.expiration-time:86400000}")
-    private long expirationTime;
+    private final JwtProperties properties;
+    public JwtUtil(JwtProperties properties){
+        this.properties = properties;
+    }
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(key.getBytes());
+        return Keys.hmacShaKeyFor(properties.getSecretKey().getBytes());
     }
 
     
@@ -34,7 +32,7 @@ public class JwtUtil {
                     .setClaims(extraClaims) // 1. Passa os dados extras
                     .setSubject(username)   // 2. Define o "dono" do token
                     .setIssuedAt(new Date(System.currentTimeMillis())) // Data de criação do token
-                    .setExpiration(new Date(System.currentTimeMillis() + expirationTime)) // Expiração do token 
+                    .setExpiration(new Date(System.currentTimeMillis() + properties.getExpirationTime())) // Expiração do token 
                     .signWith(getSigningKey(), SignatureAlgorithm.HS256) // Assinatura do token
                     .compact();
     }

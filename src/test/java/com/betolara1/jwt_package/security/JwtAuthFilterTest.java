@@ -11,6 +11,8 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.betolara1.jwt_package.config.JwtProperties;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -22,12 +24,14 @@ class JwtAuthFilterTest {
 
     private JwtAuthFilter jwtAuthFilter;
     private JwtUtil jwtUtil;
+    private JwtProperties properties;
     private FilterChain filterChain;
 
     @BeforeEach
     void setUp() {
         jwtUtil = Mockito.mock(JwtUtil.class);
-        jwtAuthFilter = new JwtAuthFilter(jwtUtil);
+        properties = new JwtProperties(); // Inicializamos as propriedades
+        jwtAuthFilter = new JwtAuthFilter(jwtUtil, properties);
         filterChain = Mockito.mock(FilterChain.class);
         SecurityContextHolder.clearContext();
     }
@@ -35,8 +39,8 @@ class JwtAuthFilterTest {
     @Test
     @DisplayName("Deve ignorar autenticação para caminhos excluídos no properties")
     void deveIgnorarCaminhosExcluidos() throws ServletException, IOException {
-        // Configuramos os caminhos excluídos
-        ReflectionTestUtils.setField(jwtAuthFilter, "excludedPaths", List.of("/public/**", "/swagger-ui/**"));
+        // Configuramos os caminhos excluídos diretamente no objeto de propriedades
+        properties.setExcludedPaths(List.of("/public/**", "/swagger-ui/**"));
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRequestURI("/public/login");
@@ -54,7 +58,7 @@ class JwtAuthFilterTest {
     @Test
     @DisplayName("Deve autenticar quando um token válido é fornecido")
     void deveAutenticarComTokenValido() throws ServletException, IOException {
-        ReflectionTestUtils.setField(jwtAuthFilter, "excludedPaths", List.of());
+        properties.setExcludedPaths(List.of());
         
         String token = "token.valido.aqui";
         String username = "roberto";
@@ -79,7 +83,7 @@ class JwtAuthFilterTest {
     @Test
     @DisplayName("Deve liberar requisições OPTIONS automaticamente (CORS)")
     void deveLiberarOptions() throws ServletException, IOException {
-        ReflectionTestUtils.setField(jwtAuthFilter, "excludedPaths", List.of());
+        properties.setExcludedPaths(List.of());
         
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setMethod("OPTIONS");
