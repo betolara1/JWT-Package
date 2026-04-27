@@ -17,7 +17,9 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     // O CONSTRUTOR RECEBE VIA INJEÇÃO DE DEPENDÊNCIA
@@ -35,8 +37,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     // METODO CRIA OBRIGATORIO POR ESTENDER DE OncePerRequestFilter
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request, 
+                                    @NonNull HttpServletResponse response, 
+                                    @NonNull FilterChain filterChain)
+                                    throws ServletException, IOException {
 
         
         String path = request.getRequestURI();
@@ -69,11 +73,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             if (jwtUtil.validateToken(token)) {
+                log.info("Usuário {} autenticado via JWT.", username);
                 // Cria autenticação baseada apenas no Token (Stateless) sem buscar no banco
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         username, null, java.util.Collections.emptyList());
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
+            else{ log.warn("Tentativa de acesso negado: Token invalido para o path {}.", requestPath);}
         }
 
         filterChain.doFilter(request, response);

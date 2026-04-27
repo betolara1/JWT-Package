@@ -14,7 +14,9 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class JwtUtil {
     private final JwtProperties properties;
     private final Key signingKey; // Declarada como final pra cachear
@@ -60,6 +62,7 @@ public class JwtUtil {
             return extractAllClaims(token).getSubject();
         }
         catch(Exception e){
+            log.warn("Token invalido ou expirado: {}", e.getMessage());
             return null;
         }
     }
@@ -73,6 +76,7 @@ public class JwtUtil {
             return true;
         }
         catch(JwtException | IllegalArgumentException e){
+            log.warn("Token invalido ou expirado: {}", e.getMessage());
             return false;
         }
     }
