@@ -4,6 +4,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Value;
 
@@ -51,15 +52,30 @@ public class JwtUtil {
     }
 
 
+    // O <T> significa: "Eu vou retornar um tipo que você escolher na hora"
+    // O ASSISTENTE (Poderoso e genérico)
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        
+        // 1. Abre a "mala" (Claims) e pega tudo o que tem lá dentro
+        final Claims claims = extractAllClaims(token);
+        
+        // 2. Executa a "função" que você me passou para extrair o que você quer
+        return claimsResolver.apply(claims);
+    }
+
+
+
     // METODO PARA VALIDAR O TOKEN
+    // O CHAVEIRO (Privado e direto)
     private Claims extractAllClaims(String token){
         return Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token).getBody();
     }
 
     // METODO PARA EXTRAIR O USUARIO
+    // OS ESPECIALISTAS (Atalhos simples) 
     public String extractUsername(String token){
         try{
-            return extractAllClaims(token).getSubject();
+            return extractClaim(token, Claims::getSubject);
         }
         catch(Exception e){
             log.warn("Token invalido ou expirado: {}", e.getMessage());
