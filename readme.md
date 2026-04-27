@@ -4,7 +4,7 @@
 [![Java](https://img.shields.io/badge/Java-21-orange)](https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-O `jwt-package` é uma biblioteca modular desenvolvida em Java 21 e Spring Boot para simplificar a implementação de segurança baseada em **JSON Web Tokens (JWT)** em arquiteturas de microserviços.
+O `jwt-package` é uma biblioteca modular e de alta performance desenvolvida em Java 21 e Spring Boot para simplificar a implementação de segurança baseada em **JSON Web Tokens (JWT)** em arquiteturas de microserviços.
 
 ---
 
@@ -13,10 +13,10 @@ O `jwt-package` é uma biblioteca modular desenvolvida em Java 21 e Spring Boot 
 Em arquiteturas de microserviços, a autenticação e autorização descentralizadas podem levar a redundância de código e inconsistências de segurança. 
 
 Este projeto fornece um pacote reutilizável que:
-1.  **Padroniza** a validação de tokens JWT.
-2.  **Reduz o Boilerplate**: Automatiza a configuração do filtro de segurança e utilitários (Auto-configuration).
-3.  **Flexibilidade Total**: Permite configurar rotas públicas dinamicamente e ativar/desativar o filtro por propriedade.
-4.  **Claims Customizados**: Suporte nativo para adicionar metadados (roles, ids, etc) ao token.
+1.  **Auto-configuração (Plug & Play)**: O Spring Boot detecta e configura a biblioteca automaticamente.
+2.  **Performance Otimizada**: Cache de chaves de assinatura para reduzir o uso de CPU.
+3.  **Observabilidade**: Logging detalhado com SLF4J para rastreio de tokens inválidos ou expirados.
+4.  **Flexibilidade Total**: Método genérico para extração de qualquer Claim customizada.
 
 ---
 
@@ -41,6 +41,7 @@ sequenceDiagram
         API-->>C: Response 200 OK
     ELSE Token Inválido/Expirado
         F-->>C: Response 401 Unauthorized
+        Note right of F: Log detalhado do erro gerado
     END
 ```
 
@@ -48,92 +49,64 @@ sequenceDiagram
 
 ## ⚙️ Configuração
 
-Para utilizar esta biblioteca, adicione as seguintes propriedades ao seu `application.properties` ou `application.yml`:
+Para utilizar esta biblioteca, adicione as propriedades ao seu `application.properties` ou `application.yml`. O pacote utiliza **Type-safe Configuration** com validação automática.
 
-### Parâmetros de Configuração
+### Parâmetros de Configuração (Prefixo: `jwt.*`)
 
 | Propriedade | Descrição | Valor Padrão |
 | :--- | :--- | :--- |
-| `secret.key` | Chave secreta para assinatura (mín. 32 chars) | (Obrigatório) |
+| `jwt.secret-key` | Chave secreta de assinatura (mín. 32 chars) | (Obrigatório) |
+| `jwt.expiration-time` | Tempo de vida em **milisegundos** | 86400000 (24h) |
 | `jwt.excluded-paths` | Lista de URLs públicas (AntPathMatcher) | (Vazio) |
-| `jwt.expiration-time` | Tempo de vida do token em **milisegundos** | 86400000 (24h) |
 | `jwt.filter.enabled` | Ativa/Desativa o filtro de segurança | `true` |
 
 #### Exemplo no `application.properties`:
 ```properties
-secret.key=minha_chave_secreta_super_longa_e_segura
-jwt.excluded-paths=/public/**, /auth/login
-jwt.expiration-time=43200000  # Define para 12 horas
-```
-
-#### Tabela de Referência (Milisegundos):
-- **1 hora**: `3600000`
-- **12 horas**: `43200000`
-- **24 horas**: `86400000`
-- **7 dias**: `604800000`
-
-- Obs: Se não for informado o valor padrão será de 24 horas.
-
-
-### Dependências Recomendadas (pom.xml)
-
-A biblioteca utiliza o JJWT. Certifique-se de ter as implementações de runtime no seu projeto se elas não forem puxadas automaticamente:
-
-```xml
-<dependency>
-    <groupId>io.jsonwebtoken</groupId>
-    <artifactId>jjwt-api</artifactId>
-    <version>0.11.5</version>
-</dependency>
-<dependency>
-    <groupId>io.jsonwebtoken</groupId>
-    <artifactId>jjwt-impl</artifactId>
-    <version>0.11.5</version>
-    <scope>runtime</scope>
-</dependency>
+jwt.secret-key=minha_chave_secreta_super_longa_e_segura_32_chars
+jwt.excluded-paths=/public/**, /auth/login, /swagger-ui/**
+jwt.expiration-time=43200000 
 ```
 
 ---
 
-## 🛠️ Funcionalidades
+## 🛠️ Funcionalidades e Uso
 
 ### 1. Gestão de Tokens (`JwtUtil`)
-O token agora possui **expiração automática de 24 horas**.
+
+O `JwtUtil` agora oferece métodos genéricos para máxima flexibilidade.
 
 ```java
 @Autowired
 private JwtUtil jwtUtil;
 
-// Gerar um token com expiração
-String token = jwtUtil.generateToken("usuario_exemplo");
+// 1. Gerar token simples
+String token = jwtUtil.generateToken("usuario");
 
-// Gerar um token com Claims Customizados (Roles, ID, etc)
+// 2. Gerar com Claims Customizados
 Map<String, Object> claims = new HashMap<>();
 claims.put("role", "ADMIN");
-claims.put("tenantId", "123");
-String tokenComClaims = jwtUtil.generateToken("usuario_exemplo", claims);
+String tokenComplexo = jwtUtil.generateToken("usuario", claims);
 
-// Validar assinatura e tempo de expiração
-boolean isValid = jwtUtil.validateToken(token);
+// 3. Extração Genérica (Poderoso!)
+Date exp = jwtUtil.extractClaim(token, Claims::getExpiration);
+String role = jwtUtil.extractClaim(token, c -> c.get("role", String.class));
 ```
 
-### 2. Filtro Inteligente (`JwtAuthFilter`)
-- **Plug & Play**: Detectado automaticamente pelo Spring Boot (não requer `@ComponentScan`).
-- **Auto-ignora OPTIONS**: Requisições de Pre-flight (CORS) são liberadas automaticamente.
-- **Configuração Dinâmica**: Usa `AntPathMatcher` para validar os caminhos definidos em `jwt.excluded-paths`.
-- **Ativável por Propriedade**: Pode ser desativado via `jwt.filter.enabled=false`.
-- **Stateless**: Autentica o usuário no contexto do Spring Security sem necessidade de consulta ao banco de dados em cada request.
+### 2. Filtro de Segurança (`JwtAuthFilter`)
+
+- **Plug & Play**: Sem necessidade de `@ComponentScan`. Adicione a lib e use.
+- **Segurança Stateless**: Integração nativa com `SecurityContextHolder`.
+- **CORS Friendly**: Libera automaticamente requisições do tipo `OPTIONS`.
 
 ---
 
 ## 🧪 Testes Automatizados
 
-A biblioteca conta com uma suíte de testes unitários cobrindo:
-- Geração e validação de tokens.
-- Extração de Claims.
-- Lógica de exclusão de caminhos do filtro.
+A biblioteca é protegida por uma suíte de testes unitários que cobre:
+- Geração e validação de tokens com e sem claims.
+- Validação de expiração e chaves inválidas.
+- Lógica de exclusão de caminhos e bypass do filtro.
 
-Para rodar os testes:
 ```bash
 mvn test
 ```

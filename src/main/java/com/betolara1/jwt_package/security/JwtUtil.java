@@ -83,6 +83,15 @@ public class JwtUtil {
         }
     }
 
+    // Extrai a data de expiração
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+    // Verifica se o token já expirou (útil para logs mais precisos)
+    private Boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+
 
     // O validateToken agora apenas tenta abrir o token. 
     // Se conseguir abrir sem dar erro, ele é válido!

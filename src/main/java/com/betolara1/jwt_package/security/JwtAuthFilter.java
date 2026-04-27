@@ -47,10 +47,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String requestPath = path.substring(request.getContextPath().length());
 
+        // METODO PARA PEGAR OS PATHS QUE SERAO EXCLUIDOS DO FILTRO
         if(properties.getExcludedPaths() != null){
-            boolean isExcluded = properties.getExcludedPaths().stream()
-                .anyMatch(pattern -> pathMatcher.match(pattern, requestPath));
+            boolean isExcluded = properties.getExcludedPaths().stream().anyMatch(pattern -> pathMatcher.match(pattern, requestPath));
             if(isExcluded || "OPTIONS".equalsIgnoreCase(request.getMethod())){
+                log.debug("Caminho liberado pelo filtro: {}.", requestPath);
                 filterChain.doFilter(request, response);
                 return;
             }
