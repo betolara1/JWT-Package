@@ -1,26 +1,21 @@
-# 🔐 JWT Package - Microservices Security Library
+<div align="center">
 
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.3-brightgreen)](https://spring.io/projects/spring-boot)
-[![Java](https://img.shields.io/badge/Java-21-orange)](https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+# 🔐 JWT Package
 
-O `jwt-package` é uma biblioteca modular e de alta performance desenvolvida em Java 21 e Spring Boot para simplificar a implementação de segurança baseada em **JSON Web Tokens (JWT)** em arquiteturas de microserviços.
+### Biblioteca Modular de Segurança para Microserviços Spring Boot
 
----
+[![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4.3-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
 
-## 🎯 Objetivo e Problema Solvido
-
-Em arquiteturas de microserviços, a autenticação e autorização descentralizadas podem levar a redundância de código e inconsistências de segurança. 
-
-Este projeto fornece um pacote reutilizável que:
-1.  **Auto-configuração (Plug & Play)**: O Spring Boot detecta e configura a biblioteca automaticamente.
-2.  **Performance Otimizada**: Cache de chaves de assinatura para reduzir o uso de CPU.
-3.  **Observabilidade**: Logging detalhado com SLF4J para rastreio de tokens inválidos ou expirados.
-4.  **Flexibilidade Total**: Método genérico para extração de qualquer Claim customizada.
+</div>
 
 ---
 
-## 🏗️ Arquitetura e Fluxo
+## 📸 Fluxo de Autenticação
+
+<div align="center">
 
 ```mermaid
 sequenceDiagram
@@ -45,22 +40,55 @@ sequenceDiagram
     END
 ```
 
+</div>
+
+---
+
+## 📌 Sobre o Projeto
+
+O **jwt-package** é uma biblioteca modular e de alta performance desenvolvida para simplificar a implementação de segurança baseada em **JSON Web Tokens (JWT)** em arquiteturas de microserviços. 
+
+Construída para ser **Plug & Play**, ela resolve o problema de redundância de código e inconsistências de segurança em sistemas distribuídos, fornecendo uma base sólida e reutilizável para qualquer projeto Spring Boot.
+
+### Principais Diferenciais:
+
+- ✅ **Auto-configuração completa**: O Spring Boot detecta e configura a biblioteca automaticamente.
+- ✅ **Performance Otimizada**: Cache de chaves de assinatura e extração eficiente de claims.
+- ✅ **Observabilidade**: Logging detalhado com SLF4J para rastreio de tokens inválidos ou expirados.
+- ✅ **Flexibilidade Total**: Métodos genéricos para extração de qualquer Claim customizada.
+- ✅ **Segurança Stateless**: Integração nativa com o `SecurityContextHolder`.
+
+---
+
+## 🏛️ Arquitetura
+
+```
+📦 jwt-package
+ ├── ⚙️ config/              # Configurações centrais
+ │    ├── JwtAutoConfiguration # Ativação automática da biblioteca
+ │    ├── JwtProperties        # Mapeamento de propriedades (application.yml)
+ │    └── SecurityConfig       # Configurações de Beans e Segurança
+ └── 🔐 security/            # Lógica de segurança
+      ├── JwtAuthFilter        # Filtro de interceptação de requisições
+      └── JwtUtil              # Utilitário para gestão de tokens
+```
+
 ---
 
 ## ⚙️ Configuração
 
-Para utilizar esta biblioteca, adicione as propriedades ao seu `application.properties` ou `application.yml`. O pacote utiliza **Type-safe Configuration** com validação automática.
+Adicione as propriedades ao seu `application.properties` ou `application.yml`. A biblioteca utiliza **Type-safe Configuration** com validação automática.
 
-### Parâmetros de Configuração (Prefixo: `jwt.*`)
+### Parâmetros (Prefixo: `jwt.*`)
 
 | Propriedade | Descrição | Valor Padrão |
 | :--- | :--- | :--- |
-| `jwt.secret-key` | Chave secreta de assinatura (mín. 32 chars) | (Obrigatório) |
-| `jwt.expiration-time` | Tempo de vida em **milisegundos** | 86400000 (24h) |
-| `jwt.excluded-paths` | Lista de URLs públicas (AntPathMatcher) | (Vazio) |
+| `jwt.secret-key` | Chave secreta de assinatura (mín. 32 chars) | **(Obrigatório)** |
+| `jwt.expiration-time` | Tempo de vida em **milisegundos** | `86400000` (24h) |
+| `jwt.excluded-paths` | Lista de URLs públicas (AntPathMatcher) | `(Vazio)` |
 | `jwt.filter.enabled` | Ativa/Desativa o filtro de segurança | `true` |
 
-#### Exemplo no `application.properties`:
+#### Exemplo:
 ```properties
 jwt.secret-key=minha_chave_secreta_super_longa_e_segura_32_chars
 jwt.excluded-paths=/public/**, /auth/login, /swagger-ui/**
@@ -69,43 +97,44 @@ jwt.expiration-time=43200000
 
 ---
 
-## 🛠️ Funcionalidades e Uso
+## 🚀 Funcionalidades e Uso
 
 ### 1. Gestão de Tokens (`JwtUtil`)
-
-O `JwtUtil` agora oferece métodos genéricos para máxima flexibilidade.
+O `JwtUtil` oferece métodos genéricos e de fácil integração.
 
 ```java
 @Autowired
 private JwtUtil jwtUtil;
 
-// 1. Gerar token simples
+// Gerar token simples
 String token = jwtUtil.generateToken("usuario");
 
-// 2. Gerar com Claims Customizados
+// Gerar com Claims Customizados
 Map<String, Object> claims = new HashMap<>();
 claims.put("role", "ADMIN");
 String tokenComplexo = jwtUtil.generateToken("usuario", claims);
 
-// 3. Extração Genérica (Poderoso!)
+// Extração Genérica (Poderoso!)
 Date exp = jwtUtil.extractClaim(token, Claims::getExpiration);
 String role = jwtUtil.extractClaim(token, c -> c.get("role", String.class));
 ```
 
 ### 2. Filtro de Segurança (`JwtAuthFilter`)
-
-- **Plug & Play**: Sem necessidade de `@ComponentScan`. Adicione a lib e use.
-- **Segurança Stateless**: Integração nativa com `SecurityContextHolder`.
+- **Zero Config**: Funciona imediatamente após adicionar a dependência.
 - **CORS Friendly**: Libera automaticamente requisições do tipo `OPTIONS`.
+- **Stateless**: Não mantém estado no servidor, ideal para escalabilidade.
 
 ---
 
-## 🧪 Testes Automatizados
+## 🧪 Testes
 
-A biblioteca é protegida por uma suíte de testes unitários que cobre:
-- Geração e validação de tokens com e sem claims.
-- Validação de expiração e chaves inválidas.
-- Lógica de exclusão de caminhos e bypass do filtro.
+A biblioteca possui uma suíte de testes unitários robusta para garantir a confiabilidade:
+
+| Cobertura | Descrição |
+|-----------|-----------|
+| **Geração** | Valida criação de tokens com e sem claims |
+| **Validação** | Checa expiração e chaves inválidas |
+| **Bypass** | Testa lógica de exclusão de caminhos |
 
 ```bash
 mvn test
@@ -113,4 +142,29 @@ mvn test
 
 ---
 
-*Desenvolvido por Roberto Lara / @betolara1 - 2026*
+## 🛠️ Stack Tecnológica
+
+| Tecnologia | Versão | Finalidade |
+|-----------|--------|------------|
+| Java | 21 (LTS) | Linguagem principal |
+| Spring Boot | 3.4.3 | Framework base e Auto-config |
+| JJWT | 0.11.5 | Manipulação de tokens JWT |
+| Lombok | — | Redução de boilerplate |
+| JUnit 5 | — | Testes unitários |
+| Maven | 3.9 | Gerenciamento de build |
+
+---
+
+## 👨‍💻 Autor
+
+Desenvolvido por **Beto Lara** — Backend Developer
+
+[![GitHub](https://img.shields.io/badge/GitHub-betolara1-181717?style=for-the-badge&logo=github)](https://github.com/betolara1)
+
+---
+
+<div align="center">
+
+**JWT Package** — Segurança simplificada para arquiteturas modernas.
+
+</div>
