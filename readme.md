@@ -75,54 +75,110 @@ Construída para ser **Plug & Play**, ela resolve o problema de redundância de 
 
 ---
 
-## ⚙️ Configuração
+## 🚀 Como Usar no Seu Projeto (Passo a Passo)
 
-Adicione as propriedades ao seu `application.properties` ou `application.yml`. A biblioteca utiliza **Type-safe Configuration** com validação automática.
+A integração do **jwt-package** em outro microserviço é projetada para ser simples e exigir o mínimo de código boilerplate possível. Siga os passos abaixo:
 
-### Parâmetros (Prefixo: `jwt.*`)
+### Passo 1: Instalação da Dependência
+
+Adicione a biblioteca ao seu `pom.xml`. *(Certifique-se de ter as credenciais do GitHub Packages configuradas no seu `settings.xml`, se aplicável)*.
+
+```xml
+<dependency>
+    <groupId>com.betolara1</groupId>
+    <artifactId>JWT-Package</artifactId>
+    <version>1.0.3</version> <!-- Substitua pela versão atual -->
+</dependency>
+```
+
+### Passo 2: Configuração do `application.properties` (Obrigatório)
+
+No seu projeto destino, você **precisa** definir a chave secreta e, opcionalmente, configurar caminhos públicos (que não exigem token) e o tempo de expiração. O filtro de segurança fará a leitura automática destas variáveis.
 
 | Propriedade | Descrição | Valor Padrão |
 | :--- | :--- | :--- |
 | `jwt.secret-key` | Chave secreta de assinatura (mín. 32 chars) | **(Obrigatório)** |
 | `jwt.expiration-time` | Tempo de vida em **milisegundos** | `86400000` (24h) |
-| `jwt.excluded-paths` | Lista de URLs públicas (AntPathMatcher) | `(Vazio)` |
-| `jwt.filter.enabled` | Ativa/Desativa o filtro de segurança | `true` |
+| `jwt.excluded-paths` | Lista de URLs públicas separadas por vírgula | `(Vazio)` |
+| `jwt.filter.enabled` | Ativa/Desativa o filtro de segurança da lib | `true` |
 
-#### Exemplo:
+**Exemplo no seu `application.properties`**:
 ```properties
+# Chave secreta (Obrigatório)
 jwt.secret-key=minha_chave_secreta_super_longa_e_segura_32_chars
-jwt.excluded-paths=/public/**, /auth/login, /swagger-ui/**
+
+# Tempo de expiração (Opcional - Padrão 24h)
 jwt.expiration-time=43200000 
+
+# Rotas públicas que NÃO precisam de token (Opcional mas muito recomendado)
+jwt.excluded-paths=/auth/login, /public/**, /swagger-ui/**
 ```
 
----
+### Passo 3: Geração de Token (Ex: Endpoint de Login)
 
-## 🚀 Funcionalidades e Uso
-
-### 1. Gestão de Tokens (`JwtUtil`)
-O `JwtUtil` oferece métodos genéricos e de fácil integração.
+A biblioteca **não** cuida de checar banco de dados ou validar senhas. Isso fica a cargo do seu projeto!
+O que você precisa fazer é: no seu `AuthController`, após validar as credenciais do usuário, você utiliza o `JwtUtil` (já injetado automaticamente pelo Spring) para gerar o token.
 
 ```java
-@Autowired
-private JwtUtil jwtUtil;
+import com.bartz.jwt.security.JwtUtil;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
-// Gerar token simples
-String token = jwtUtil.generateToken("usuario");
+@RestController
+@RequestMapping("/auth")
+public class AuthController {
 
-// Gerar com Claims Customizados
-Map<String, Object> claims = new HashMap<>();
-claims.put("role", "ADMIN");
-String tokenComplexo = jwtUtil.generateToken("usuario", claims);
+    @Autowired
+    private JwtUtil jwtUtil; // Injetado automaticamente!
 
-// Extração Genérica (Poderoso!)
-Date exp = jwtUtil.extractClaim(token, Claims::getExpiration);
-String role = jwtUtil.extractClaim(token, c -> c.get("role", String.class));
+    @PostMapping("/login")
+    public String login(@RequestBody LoginRequest request) {
+        // 1. Valide o usuário e senha no seu banco de dados
+        boolean isValido = meuServicoDeAuth.validarCredenciais(request.getUsername(), request.getPassword());
+        
+        if (isValido) {
+            // 2. Gere o Token simples
+            return jwtUtil.generateToken(request.getUsername());
+            
+            // OU gere um token com dados (Claims) extras!
+            // Map<String, Object> claims = new HashMap<>();
+            // claims.put("role", "ADMIN");
+            // return jwtUtil.generateToken(request.getUsername(), claims);
+        }
+        throw new RuntimeException("Credenciais inválidas");
+    }
+}
 ```
 
-### 2. Filtro de Segurança (`JwtAuthFilter`)
-- **Zero Config**: Funciona imediatamente após adicionar a dependência.
-- **CORS Friendly**: Libera automaticamente requisições do tipo `OPTIONS`.
-- **Stateless**: Não mantém estado no servidor, ideal para escalabilidade.
+### Passo 4: O Que a Biblioteca Faz Sozinha? (O que NÃO precisa criar)
+
+Graças a arquitetura **Plug & Play**, no seu projeto destino **VOCÊ NÃO PRECISA**:
+- ❌ Criar um `SecurityFilterChain` genérico para validar Tokens.
+- ❌ Criar o filtro de Requests (`OncePerRequestFilter`).
+- ❌ Configurar CORS ou gerenciamento Stateless (A lib já configura isso para você).
+
+O `JwtAuthFilter` da biblioteca interceptará automaticamente **todas** as requisições, verificará as rotas que você colocou em `jwt.excluded-paths` e validará o Token do Header `Authorization: Bearer <token>`.
+
+### Passo 5: Recuperando o Usuário Logado
+
+Nos seus outros controllers (que já estão protegidos pelo filtro), você pode saber quem fez a requisição diretamente através do contexto de segurança do Spring.
+
+```java
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class MeuController {
+
+    @GetMapping("/meus-dados")
+    public String getMeusDados() {
+        // A biblioteca já salvou o nome do usuário logado no contexto!
+        String usernameLogado = SecurityContextHolder.getContext().getAuthentication().getName();
+        return "Dados protegidos do usuário: " + usernameLogado;
+    }
+}
+```
 
 ---
 
