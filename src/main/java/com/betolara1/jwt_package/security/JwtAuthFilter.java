@@ -69,7 +69,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         // SE CHEGOU AQUI, SIGNIFICA QUE O USUÁRIO TEM UM TOKEN, ENTÃO VAMOS EXTRAIR O
         // USUÁRIO DO TOKEN E VALIDAR O TOKEN
-        String token = authHeader.substring(7);
+        String token = authHeader.substring(7).trim();
         String username = jwtUtil.extractUsername(token);
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
